@@ -73,7 +73,8 @@ func (d *Downloader) Close() {
 
 // Resolve adds the magnet link to the client, discovers peers, and waits
 // until the torrent metadata (file list, piece hashes) has been fetched
-// or ctx is done.
+// or ctx is done. It fails if the metadata does not contain a usable
+// file name.
 func (d *Downloader) Resolve(ctx context.Context, magnet string) (*torrent.Torrent, error) {
 	t, err := d.client.AddMagnet(magnet)
 	if err != nil {
@@ -83,11 +84,30 @@ func (d *Downloader) Resolve(ctx context.Context, magnet string) (*torrent.Torre
 	log.Printf("fetching metadata for %s ...", t.InfoHash().HexString())
 	select {
 	case <-t.GotInfo():
-		return t, nil
 	case <-ctx.Done():
 		t.Drop()
 		return nil, fmt.Errorf("fetching torrent metadata: %w", ctx.Err())
 	}
+
+	if err := validateName(t.Info().Name); err != nil {
+		t.Drop()
+		return nil, fmt.Errorf("cannot determine file name from torrent metadata: %w", err)
+	}
+	return t, nil
+}
+
+// validateName rejects metadata names that are empty or unsafe to use as a
+// file name in the output directory.
+func validateName(name string) error {
+	switch {
+	case strings.TrimSpace(name) == "":
+		return fmt.Errorf("name is empty")
+	case name == "." || name == "..":
+		return fmt.Errorf("invalid name %q", name)
+	case strings.ContainsRune(name, os.PathSeparator):
+		return fmt.Errorf("name %q contains a path separator", name)
+	}
+	return nil
 }
 
 // Download starts downloading all files of the torrent and blocks until
