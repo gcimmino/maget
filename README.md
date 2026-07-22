@@ -1,5 +1,7 @@
 # maget
 
+`wget` for magnet link.
+
 A command-line tool to download files from torrents using a magnet link.
 
 Give it a magnet link, and it downloads the torrent's content into the current
