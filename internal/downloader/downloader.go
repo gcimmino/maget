@@ -13,6 +13,9 @@ import (
 
 	alog "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
+	"github.com/anacrolix/torrent/storage/disabled"
 )
 
 // Options configures a Downloader.
@@ -24,6 +27,8 @@ type Options struct {
 	InfoHash string
 	// Verbose enables the torrent client's internal logging.
 	Verbose bool
+	// InfoOnly disables disk storage because no content will be downloaded.
+	InfoOnly bool
 }
 
 // Downloader owns a torrent client for the lifetime of a download.
@@ -35,15 +40,20 @@ type Downloader struct {
 	stagingDir string
 }
 
-// New creates a Downloader writing into opts.OutputDir.
+// New creates a Downloader writing into opts.OutputDir. Information-only
+// runs use disabled storage and leave no files on disk.
 func New(opts Options) (*Downloader, error) {
 	stagingDir := filepath.Join(opts.OutputDir, ".maget-"+opts.InfoHash)
-	if err := os.MkdirAll(stagingDir, 0o755); err != nil {
-		return nil, fmt.Errorf("creating staging directory: %w", err)
-	}
 
 	cfg := torrent.NewDefaultClientConfig()
 	cfg.DataDir = stagingDir
+	// Let the OS choose a free port so concurrent maget processes can run.
+	cfg.ListenPort = 0
+	if opts.InfoOnly {
+		cfg.DefaultStorage = metadataOnlyStorage{}
+	} else if err := os.MkdirAll(stagingDir, 0o755); err != nil {
+		return nil, fmt.Errorf("creating staging directory: %w", err)
+	}
 	// One-shot downloader: UPnP port mapping is unnecessary and noisy on
 	// routers that reject it.
 	cfg.NoDefaultPortForwarding = true
@@ -69,6 +79,18 @@ func New(opts Options) (*Downloader, error) {
 func (d *Downloader) Close() {
 	d.client.Close()
 	<-d.client.Closed()
+}
+
+// metadataOnlyStorage adapts the disabled backend to the current storage
+// interface, allowing metadata resolution without any filesystem storage.
+type metadataOnlyStorage struct{}
+
+func (metadataOnlyStorage) OpenTorrent(
+	_ context.Context,
+	info *metainfo.Info,
+	infoHash metainfo.Hash,
+) (storage.TorrentImpl, error) {
+	return disabled.Client{}.OpenTorrent(info, infoHash)
 }
 
 // Resolve adds the magnet link to the client, discovers peers, and waits

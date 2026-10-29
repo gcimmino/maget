@@ -11,6 +11,7 @@
 - [x] Accept a magnet link as a positional argument
 - [x] Validate the input looks like a valid magnet URI (`magnet:?xt=urn:btih:...`)
 - [x] Support optional flags: `-o/--output` (output directory, default = current dir), `-v` (verbose/progress logging), `-t/--timeout`
+- [x] Support `-i/--info` to show torrent details (name, hash, size, pieces, trackers, files) without downloading
 - [x] Print usage/help text on missing or malformed input
 
 ## 3. Magnet link parsing

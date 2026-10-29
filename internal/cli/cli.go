@@ -26,6 +26,8 @@ type Config struct {
 	OutputDir string
 	Verbose   bool
 	Timeout   time.Duration
+	// Info requests only showing torrent information; nothing is downloaded.
+	Info bool
 }
 
 // ErrHelp is returned when the user requested the help text.
@@ -37,6 +39,7 @@ Download a file from a torrent using a magnet link.
 
 Options:
   -o, --output <dir>   output directory (default: current directory)
+  -i, --info           show torrent information without downloading
   -v                   verbose output with progress logging
   -t, --timeout <dur>  give up after this duration, e.g. 10m (default: none)
   -h, --help           show this help text
@@ -58,6 +61,8 @@ func Parse(args []string) (*Config, error) {
 	fs.StringVar(&cfg.OutputDir, "o", ".", "output directory")
 	fs.StringVar(&cfg.OutputDir, "output", ".", "output directory")
 	fs.BoolVar(&cfg.Verbose, "v", false, "verbose output")
+	fs.BoolVar(&cfg.Info, "i", false, "show torrent information without downloading")
+	fs.BoolVar(&cfg.Info, "info", false, "show torrent information without downloading")
 	fs.DurationVar(&cfg.Timeout, "t", 0, "timeout")
 	fs.DurationVar(&cfg.Timeout, "timeout", 0, "timeout")
 

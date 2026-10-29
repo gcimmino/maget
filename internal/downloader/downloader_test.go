@@ -19,6 +19,61 @@ func TestValidateName(t *testing.T) {
 	}
 }
 
+func TestNewCreatesStagingDir(t *testing.T) {
+	outputDir := filepath.Join(t.TempDir(), "new", "output")
+	d, err := New(Options{OutputDir: outputDir, InfoHash: "0123456789abcdef"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+
+	for _, path := range []string{outputDir, d.StagingDir()} {
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o755 {
+			t.Errorf("%s permissions = %o, want 755", path, got)
+		}
+	}
+}
+
+func TestNewInfoOnlyCreatesNoDirectories(t *testing.T) {
+	outputDir := filepath.Join(t.TempDir(), "new", "output")
+	d, err := New(Options{
+		OutputDir: outputDir,
+		InfoHash:  "0123456789abcdef",
+		InfoOnly:  true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Close()
+
+	if _, err := os.Stat(outputDir); !os.IsNotExist(err) {
+		t.Errorf("info-only run created %s or returned unexpected error: %v", outputDir, err)
+	}
+}
+
+func TestNewConcurrentClients(t *testing.T) {
+	outputDir := t.TempDir()
+	first, err := New(Options{OutputDir: outputDir, InfoHash: "first"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer first.Close()
+
+	second, err := New(Options{
+		OutputDir: outputDir,
+		InfoHash:  "second",
+		InfoOnly:  true,
+	})
+	if err != nil {
+		t.Fatalf("starting concurrent info-only client: %v", err)
+	}
+	second.Close()
+}
+
 func TestNonConflictingPath(t *testing.T) {
 	dir := t.TempDir()
 

@@ -46,6 +46,7 @@ func run(cfg *cli.Config) error {
 		OutputDir: cfg.OutputDir,
 		InfoHash:  cfg.Parsed.InfoHash.HexString(),
 		Verbose:   cfg.Verbose,
+		InfoOnly:  cfg.Info,
 	})
 	if err != nil {
 		return err
@@ -55,6 +56,10 @@ func run(cfg *cli.Config) error {
 	t, err := d.Resolve(ctx, cfg.Magnet)
 	if err != nil {
 		return err
+	}
+	if cfg.Info {
+		fmt.Print(downloader.Describe(t))
+		return nil
 	}
 	log.Printf("downloading %q (%d bytes)", t.Name(), t.Length())
 

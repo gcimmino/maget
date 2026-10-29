@@ -35,6 +35,7 @@ maget [options] <magnet-link>
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-o`, `--output <dir>` | Output directory | current directory |
+| `-i`, `--info` | Show torrent information (name, size, files, trackers) without downloading | off |
 | `-v` | Verbose output (torrent client logs) | off |
 | `-t`, `--timeout <dur>` | Give up after this duration, e.g. `10m`, `1h30m` | none |
 | `-h`, `--help` | Show help text | |
@@ -52,6 +53,27 @@ Download into a specific directory with a 30-minute timeout:
 ```sh
 maget -o ~/Downloads -t 30m "magnet:?xt=urn:btih:..."
 ```
+
+Inspect a torrent before downloading anything:
+
+```sh
+maget -i "magnet:?xt=urn:btih:..."
+```
+
+```
+Name:        Big Buck Bunny
+Info hash:   dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c
+Size:        263.6 MiB (276445467 bytes)
+Pieces:      1055 × 256.0 KiB
+Trackers:    (none — DHT only)
+Files (3):
+       140 B  Big Buck Bunny.en.srt
+   263.3 MiB  Big Buck Bunny.mp4
+   303.1 KiB  poster.jpg
+```
+
+Fetching the file list and total size requires the torrent metadata, so `-i`
+still needs a peer connection (it does not download any content).
 
 > **Tip:** always quote the magnet link — it contains `&` characters that the
 > shell would otherwise interpret.

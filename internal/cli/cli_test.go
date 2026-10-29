@@ -9,7 +9,7 @@ const validMagnetHex = "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d56609
 const validMagnetBase32 = "magnet:?xt=urn:btih:BFVNVMWTM33ULYVDXOSPJTDFPZZ2GCVU"
 
 func TestParseValid(t *testing.T) {
-	cfg, err := Parse([]string{"-o", "/tmp/out", "-v", "-t", "5m", validMagnetHex})
+	cfg, err := Parse([]string{"-o", "/tmp/out", "-v", "-i", "-t", "5m", validMagnetHex})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,6 +22,9 @@ func TestParseValid(t *testing.T) {
 	if !cfg.Verbose {
 		t.Error("verbose = false")
 	}
+	if !cfg.Info {
+		t.Error("info = false")
+	}
 	if cfg.Timeout != 5*time.Minute {
 		t.Errorf("timeout = %v", cfg.Timeout)
 	}
@@ -32,8 +35,18 @@ func TestParseDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.OutputDir != "." || cfg.Verbose || cfg.Timeout != 0 {
+	if cfg.OutputDir != "." || cfg.Verbose || cfg.Info || cfg.Timeout != 0 {
 		t.Errorf("unexpected defaults: %+v", cfg)
+	}
+}
+
+func TestParseInfoLongFlag(t *testing.T) {
+	cfg, err := Parse([]string{"--info", validMagnetHex})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Info {
+		t.Error("info = false")
 	}
 }
 
